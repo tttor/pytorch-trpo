@@ -87,19 +87,14 @@ def update_params(policy_net, value_net, batch, args):
     deltas = torch.Tensor(actions.size(0),1)
     advantages = torch.Tensor(actions.size(0),1)
 
-    prev_return = 0
-    prev_value = 0
-    prev_advantage = 0
+    prev_return = 0; prev_value = 0; prev_advantage = 0
     for i in reversed(range(rewards.size(0))):
         returns[i] = rewards[i] + args.gamma * prev_return * masks[i]
         deltas[i] = rewards[i] + args.gamma * prev_value * masks[i] - values.data[i]
         advantages[i] = deltas[i] + args.gamma * args.tau * prev_advantage * masks[i]
-
         prev_return = returns[i, 0]
         prev_value = values.data[i, 0]
         prev_advantage = advantages[i, 0]
-
-    targets = Variable(returns)
 
     # Original code uses the same LBFGS to optimize the value loss
     def get_value_loss(flat_params):
@@ -109,12 +104,13 @@ def update_params(policy_net, value_net, batch, args):
                 param.grad.data.fill_(0)
 
         values_ = value_net(Variable(states))
-
+        targets = Variable(returns)
         value_loss = (values_ - targets).pow(2).mean()
 
         # weight decay
+        l2_reg = 1e-3
         for param in value_net.parameters():
-            value_loss += param.pow(2).sum() * args.l2_reg
+            value_loss += param.pow(2).sum() * l2_reg
         value_loss.backward()
         return (value_loss.data.double().numpy(), get_flat_grad_from(value_net).data.double().numpy())
 
@@ -156,7 +152,6 @@ def parse_arg():
     parser.add_argument('--batch-size', type=int, default=2000, help='batch-size')
     parser.add_argument('--gamma', type=float, default=0.995, help='discount factor')
     parser.add_argument('--tau', type=float, default=0.97, help='gae')
-    parser.add_argument('--l2-reg', type=float, default=1e-3, help='l2 regularization regression')
     parser.add_argument('--max-kl', type=float, default=1e-2, help='max kl value')
     parser.add_argument('--damping', type=float, default=1e-1, help='damping')
     parser.add_argument('--log-interval', type=int, default=1, help='interval between training status logs')
