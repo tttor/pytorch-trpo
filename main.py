@@ -125,14 +125,12 @@ def update_params(policy_net, value_net, batch, args):
                 action_means, action_log_stds, action_stds = policy_net(Variable(states))
         else:
             action_means, action_log_stds, action_stds = policy_net(Variable(states))
-
         log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds)
         action_loss = -Variable(advantages) * torch.exp(log_prob - Variable(fixed_log_prob))
         return action_loss.mean()
 
     def get_kl():
         mean1, log_std1, std1 = policy_net(Variable(states))
-
         mean0 = Variable(mean1.data)
         log_std0 = Variable(log_std1.data)
         std0 = Variable(std1.data)

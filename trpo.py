@@ -6,14 +6,12 @@ from utils import *
 def trpo_step(model, get_loss, get_kl, max_kl, damping):
     def Fvp(v):
         kl = get_kl().mean()
-
         grads = torch.autograd.grad(kl, model.parameters(), create_graph=True)
         flat_grad_kl = torch.cat([grad.view(-1) for grad in grads])
 
         kl_v = (flat_grad_kl * Variable(v)).sum()
         grads = torch.autograd.grad(kl_v, model.parameters())
         flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).data
-
         return flat_grad_grad_kl + v * damping
 
     # Compute loss and grad
@@ -36,7 +34,6 @@ def trpo_step(model, get_loss, get_kl, max_kl, damping):
 
     # Update
     set_flat_params_to(model, new_params)
-
     return loss
 
 def conjugate_gradients(Avp, b, nsteps, residual_tol=1e-10):
