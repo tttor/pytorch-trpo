@@ -29,12 +29,10 @@ def main():
     policy_net = Policy(num_inputs, num_actions)
     value_net = Value(num_inputs)
 
-    for i_episode in count(1):
-        memory = Memory()
+    n_update = 10
+    for i_update in range(n_update):
+        memory = Memory(); num_steps = 0; reward_batch = 0; num_episodes = 0
 
-        num_steps = 0
-        reward_batch = 0
-        num_episodes = 0
         while num_steps < args.batch_size:
             state = env.reset()
             state = running_state(state)
@@ -64,13 +62,13 @@ def main():
             num_episodes += 1
             reward_batch += reward_sum
 
-        reward_batch /= num_episodes
         batch = memory.sample()
         update_params(policy_net, value_net, batch, args)
 
-        if i_episode % args.log_interval == 0:
-            print('Episode {}\tLast reward: {}\tAverage reward {:.2f}'.format(
-                i_episode, reward_sum, reward_batch))
+        reward_batch /= num_episodes
+        if (i_update==0) or (i_update % args.log_interval == 0) or (i_update==n_update-1):
+            print('===== update {} ====='.format(i_update))
+            print('Last episode return= {}\tAverage return= {:.2f}'.format(reward_sum, reward_batch))
 
 def select_action(policy_net, state):
     state = torch.from_numpy(state).unsqueeze(0)
@@ -154,25 +152,25 @@ def update_params(policy_net, value_net, batch, args):
 def parse_arg():
     parser = argparse.ArgumentParser(description='PyTorch actor-critic example')
     parser.add_argument('--gamma', type=float, default=0.995, metavar='G',
-                        help='discount factor (default: 0.995)')
+                        help='discount factor')
     parser.add_argument('--env-name', default="Reacher-v2", metavar='G',
                         help='name of the environment to run')
     parser.add_argument('--tau', type=float, default=0.97, metavar='G',
-                        help='gae (default: 0.97)')
+                        help='gae')
     parser.add_argument('--l2-reg', type=float, default=1e-3, metavar='G',
-                        help='l2 regularization regression (default: 1e-3)')
+                        help='l2 regularization regression')
     parser.add_argument('--max-kl', type=float, default=1e-2, metavar='G',
-                        help='max kl value (default: 1e-2)')
+                        help='max kl value')
     parser.add_argument('--damping', type=float, default=1e-1, metavar='G',
-                        help='damping (default: 1e-1)')
+                        help='damping')
     parser.add_argument('--seed', type=int, default=12345, metavar='N',
-                        help='random seed (default: 12345)')
-    parser.add_argument('--batch-size', type=int, default=15000, metavar='N',
-                        help='batch-size (default: 15000)')
+                        help='random seed')
+    parser.add_argument('--batch-size', type=int, default=2000, metavar='N',
+                        help='batch-size')
     parser.add_argument('--render', action='store_true',
                         help='render the environment')
-    parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-                        help='interval between training status logs (default: 10)')
+    parser.add_argument('--log-interval', type=int, default=1, metavar='N',
+                        help='interval between training status logs')
     args = parser.parse_args()
     return args
 
