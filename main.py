@@ -151,26 +151,16 @@ def update_params(policy_net, value_net, batch, args):
 
 def parse_arg():
     parser = argparse.ArgumentParser(description='PyTorch actor-critic example')
-    parser.add_argument('--gamma', type=float, default=0.995, metavar='G',
-                        help='discount factor')
-    parser.add_argument('--env-name', default="Reacher-v2", metavar='G',
-                        help='name of the environment to run')
-    parser.add_argument('--tau', type=float, default=0.97, metavar='G',
-                        help='gae')
-    parser.add_argument('--l2-reg', type=float, default=1e-3, metavar='G',
-                        help='l2 regularization regression')
-    parser.add_argument('--max-kl', type=float, default=1e-2, metavar='G',
-                        help='max kl value')
-    parser.add_argument('--damping', type=float, default=1e-1, metavar='G',
-                        help='damping')
-    parser.add_argument('--seed', type=int, default=12345, metavar='N',
-                        help='random seed')
-    parser.add_argument('--batch-size', type=int, default=2000, metavar='N',
-                        help='batch-size')
-    parser.add_argument('--render', action='store_true',
-                        help='render the environment')
-    parser.add_argument('--log-interval', type=int, default=1, metavar='N',
-                        help='interval between training status logs')
+    parser.add_argument('--seed', type=int, default=12345, help='random seed')
+    parser.add_argument('--env-name', default="Reacher-v2",help='name of the environment to run')
+    parser.add_argument('--batch-size', type=int, default=2000, help='batch-size')
+    parser.add_argument('--gamma', type=float, default=0.995, help='discount factor')
+    parser.add_argument('--tau', type=float, default=0.97, help='gae')
+    parser.add_argument('--l2-reg', type=float, default=1e-3, help='l2 regularization regression')
+    parser.add_argument('--max-kl', type=float, default=1e-2, help='max kl value')
+    parser.add_argument('--damping', type=float, default=1e-1, help='damping')
+    parser.add_argument('--log-interval', type=int, default=1, help='interval between training status logs')
+    parser.add_argument('--render', action='store_true', help='render the environment')
     args = parser.parse_args()
     return args
 
