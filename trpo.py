@@ -4,10 +4,6 @@ from torch.autograd import Variable
 from utils import *
 
 def trpo_step(model, get_loss, get_kl, max_kl, damping):
-    loss = get_loss()
-    grads = torch.autograd.grad(loss, model.parameters())
-    loss_grad = torch.cat([grad.view(-1) for grad in grads]).data
-
     def Fvp(v):
         kl = get_kl()
         kl = kl.mean()
@@ -21,19 +17,25 @@ def trpo_step(model, get_loss, get_kl, max_kl, damping):
 
         return flat_grad_grad_kl + v * damping
 
+    # Compute loss and grad
+    loss = get_loss()
+    grads = torch.autograd.grad(loss, model.parameters())
+    loss_grad = torch.cat([grad.view(-1) for grad in grads]).data
+
+    # Step dir
     stepdir = conjugate_gradients(Fvp, -loss_grad, 10)
 
+    # Step len
     shs = 0.5 * (stepdir * Fvp(stepdir)).sum(0, keepdim=True)
-
-    lm = torch.sqrt(shs / max_kl)
+    lm = torch.sqrt(shs / max_kl) # lm for "lagrange multiplier"
     fullstep = stepdir / lm[0]
-
     neggdotstepdir = (-loss_grad * stepdir).sum(0, keepdim=True)
-    print(("lagrange multiplier:", lm[0], "grad_norm:", loss_grad.norm()))
 
     prev_params = get_flat_params_from(model)
     success, new_params = linesearch(model, get_loss, prev_params, fullstep,
                                      neggdotstepdir / lm[0])
+
+    # Update
     set_flat_params_to(model, new_params)
 
     return loss
