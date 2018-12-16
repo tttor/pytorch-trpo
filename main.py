@@ -77,6 +77,7 @@ def select_action(policy_net, state):
     return action
 
 def update_params(policy_net, value_net, batch, args):
+    # Prepare training data
     rewards = torch.Tensor(batch.reward)
     masks = torch.Tensor(batch.mask)
     actions = torch.Tensor(np.concatenate(batch.action, 0))
@@ -86,7 +87,6 @@ def update_params(policy_net, value_net, batch, args):
     returns = torch.Tensor(actions.size(0),1)
     deltas = torch.Tensor(actions.size(0),1)
     advantages = torch.Tensor(actions.size(0),1)
-
     prev_return = 0; prev_value = 0; prev_advantage = 0
     for i in reversed(range(rewards.size(0))):
         returns[i] = rewards[i] + args.gamma * prev_return * masks[i]
@@ -95,8 +95,9 @@ def update_params(policy_net, value_net, batch, args):
         prev_return = returns[i, 0]
         prev_value = values.data[i, 0]
         prev_advantage = advantages[i, 0]
+    advantages = (advantages - advantages.mean()) / advantages.std()
 
-    # Original code uses the same LBFGS to optimize the value loss
+    # Update value net
     def get_value_loss(flat_params):
         set_flat_params_to(value_net, torch.Tensor(flat_params))
         for param in value_net.parameters():
@@ -117,11 +118,7 @@ def update_params(policy_net, value_net, batch, args):
     flat_params, _, opt_info = scipy.optimize.fmin_l_bfgs_b(get_value_loss, get_flat_params_from(value_net).double().numpy(), maxiter=25)
     set_flat_params_to(value_net, torch.Tensor(flat_params))
 
-    advantages = (advantages - advantages.mean()) / advantages.std()
-
-    action_means, action_log_stds, action_stds = policy_net(Variable(states))
-    fixed_log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds).data.clone()
-
+    # Update policy net
     def get_loss(volatile=False):
         if volatile:
             with torch.no_grad():
@@ -133,7 +130,6 @@ def update_params(policy_net, value_net, batch, args):
         action_loss = -Variable(advantages) * torch.exp(log_prob - Variable(fixed_log_prob))
         return action_loss.mean()
 
-
     def get_kl():
         mean1, log_std1, std1 = policy_net(Variable(states))
 
@@ -143,6 +139,8 @@ def update_params(policy_net, value_net, batch, args):
         kl = log_std1 - log_std0 + (std0.pow(2) + (mean0 - mean1).pow(2)) / (2.0 * std1.pow(2)) - 0.5
         return kl.sum(1, keepdim=True)
 
+    action_means, action_log_stds, action_stds = policy_net(Variable(states))
+    fixed_log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds).data.clone()
     trpo_step(policy_net, get_loss, get_kl, args.max_kl, args.damping)
 
 def parse_arg():
