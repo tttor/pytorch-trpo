@@ -5,8 +5,7 @@ from utils import *
 
 def trpo_step(model, get_loss, get_kl, max_kl, damping):
     def Fvp(v):
-        kl = get_kl()
-        kl = kl.mean()
+        kl = get_kl().mean()
 
         grads = torch.autograd.grad(kl, model.parameters(), create_graph=True)
         flat_grad_kl = torch.cat([grad.view(-1) for grad in grads])
@@ -58,15 +57,9 @@ def conjugate_gradients(Avp, b, nsteps, residual_tol=1e-10):
             break
     return x
 
-def linesearch(model,
-               f,
-               x,
-               fullstep,
-               expected_improve_rate,
-               max_backtracks=10,
-               accept_ratio=.1):
+def linesearch(model, f, x, fullstep, expected_improve_rate, max_backtracks=10, accept_ratio=.1):
     fval = f(True).data
-    print("fval before", fval.item())
+    # print("fval before", fval.item())
     for (_n_backtracks, stepfrac) in enumerate(.5**np.arange(max_backtracks)):
         xnew = x + stepfrac * fullstep
         set_flat_params_to(model, xnew)
@@ -74,9 +67,8 @@ def linesearch(model,
         actual_improve = fval - newfval
         expected_improve = expected_improve_rate * stepfrac
         ratio = actual_improve / expected_improve
-        print("a/e/r", actual_improve.item(), expected_improve.item(), ratio.item())
-
+        # print("a/e/r", actual_improve.item(), expected_improve.item(), ratio.item())
         if ratio.item() > accept_ratio and actual_improve.item() > 0:
-            print("fval after", newfval.item())
+            # print("fval after", newfval.item())
             return True, xnew
     return False, x

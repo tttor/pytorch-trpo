@@ -29,7 +29,7 @@ def main():
     policy_net = Policy(num_inputs, num_actions)
     value_net = Value(num_inputs)
 
-    n_update = 10
+    n_update = 3
     for i_update in range(n_update):
         memory = Memory(); num_steps = 0; reward_batch = 0; num_episodes = 0
 
