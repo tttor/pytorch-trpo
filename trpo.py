@@ -1,52 +1,7 @@
 import numpy as np
-
 import torch
 from torch.autograd import Variable
 from utils import *
-
-
-def conjugate_gradients(Avp, b, nsteps, residual_tol=1e-10):
-    x = torch.zeros(b.size())
-    r = b.clone()
-    p = b.clone()
-    rdotr = torch.dot(r, r)
-    for i in range(nsteps):
-        _Avp = Avp(p)
-        alpha = rdotr / torch.dot(p, _Avp)
-        x += alpha * p
-        r -= alpha * _Avp
-        new_rdotr = torch.dot(r, r)
-        betta = new_rdotr / rdotr
-        p = r + betta * p
-        rdotr = new_rdotr
-        if rdotr < residual_tol:
-            break
-    return x
-
-
-def linesearch(model,
-               f,
-               x,
-               fullstep,
-               expected_improve_rate,
-               max_backtracks=10,
-               accept_ratio=.1):
-    fval = f(True).data
-    print("fval before", fval.item())
-    for (_n_backtracks, stepfrac) in enumerate(.5**np.arange(max_backtracks)):
-        xnew = x + stepfrac * fullstep
-        set_flat_params_to(model, xnew)
-        newfval = f(True).data
-        actual_improve = fval - newfval
-        expected_improve = expected_improve_rate * stepfrac
-        ratio = actual_improve / expected_improve
-        print("a/e/r", actual_improve.item(), expected_improve.item(), ratio.item())
-
-        if ratio.item() > accept_ratio and actual_improve.item() > 0:
-            print("fval after", newfval.item())
-            return True, xnew
-    return False, x
-
 
 def trpo_step(model, get_loss, get_kl, max_kl, damping):
     loss = get_loss()
@@ -82,3 +37,44 @@ def trpo_step(model, get_loss, get_kl, max_kl, damping):
     set_flat_params_to(model, new_params)
 
     return loss
+
+def conjugate_gradients(Avp, b, nsteps, residual_tol=1e-10):
+    x = torch.zeros(b.size())
+    r = b.clone()
+    p = b.clone()
+    rdotr = torch.dot(r, r)
+    for i in range(nsteps):
+        _Avp = Avp(p)
+        alpha = rdotr / torch.dot(p, _Avp)
+        x += alpha * p
+        r -= alpha * _Avp
+        new_rdotr = torch.dot(r, r)
+        betta = new_rdotr / rdotr
+        p = r + betta * p
+        rdotr = new_rdotr
+        if rdotr < residual_tol:
+            break
+    return x
+
+def linesearch(model,
+               f,
+               x,
+               fullstep,
+               expected_improve_rate,
+               max_backtracks=10,
+               accept_ratio=.1):
+    fval = f(True).data
+    print("fval before", fval.item())
+    for (_n_backtracks, stepfrac) in enumerate(.5**np.arange(max_backtracks)):
+        xnew = x + stepfrac * fullstep
+        set_flat_params_to(model, xnew)
+        newfval = f(True).data
+        actual_improve = fval - newfval
+        expected_improve = expected_improve_rate * stepfrac
+        ratio = actual_improve / expected_improve
+        print("a/e/r", actual_improve.item(), expected_improve.item(), ratio.item())
+
+        if ratio.item() > accept_ratio and actual_improve.item() > 0:
+            print("fval after", newfval.item())
+            return True, xnew
+    return False, x
