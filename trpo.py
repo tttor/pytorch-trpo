@@ -20,6 +20,7 @@ def trpo_step(model, get_loss, get_kl, max_kl, damping):
     loss_grad = torch.cat([grad.view(-1) for grad in grads]).data
 
     # Step dir
+    # Using linear approximation to the objective fn, but how does it look like exactly?
     stepdir = conjugate_gradients(Fvp, -loss_grad, 10)
 
     # Step len
