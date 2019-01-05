@@ -3,6 +3,10 @@
 # Question
 * damping in Fvp() in trpo_step()
 * shs stands for?
+  * ANS: it is for `s^T H s`,
+    where s is the step dir and H is some notion of Hessian, eg the Fisher info matrix;
+    see Appendix C
+
 ```
 # Step len
 shs = 0.5 * (stepdir * Fvp(stepdir)).sum(0, keepdim=True)
@@ -34,3 +38,11 @@ for _ in range(10):
         logger.log("Stepsize OK!")
         break
     stepsize *= .5```
+
+* how does lagrange multplier work here?
+```
+shs = .5*stepdir.dot(fisher_vector_product(stepdir))
+lm = np.sqrt(shs / max_kl)
+# logger.log("lagrange multiplier:", lm, "gnorm:", np.linalg.norm(g))
+fullstep = stepdir / lm
+```
