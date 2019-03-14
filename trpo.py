@@ -6,13 +6,13 @@ from utils import *
 def trpo_step(model, get_loss, get_kl, max_kl, damping):
     def Fvp(v):
         kl = get_kl().mean()
-        grads = torch.autograd.grad(kl, model.parameters(), create_graph=True)
-        flat_grad_kl = torch.cat([grad.view(-1) for grad in grads])
+        grad_kl = torch.autograd.grad(kl, model.parameters(), create_graph=True)
+        grad_kl = torch.cat([grad.view(-1) for grad in grad_kl])
 
-        kl_v = (flat_grad_kl * Variable(v)).sum()
-        grads = torch.autograd.grad(kl_v, model.parameters())
-        flat_grad_grad_kl = torch.cat([grad.contiguous().view(-1) for grad in grads]).data
-        return flat_grad_grad_kl + v * damping
+        grad_kl_v = (grad_kl * Variable(v)).sum()
+        grad_grad_kl_v = torch.autograd.grad(grad_kl_v, model.parameters())
+        grad_grad_kl_v = torch.cat([grad.contiguous().view(-1) for grad in grad_grad_kl_v]).data
+        return grad_grad_kl_v + (v*damping)
 
     # Compute loss and grad
     loss = get_loss()
@@ -24,8 +24,8 @@ def trpo_step(model, get_loss, get_kl, max_kl, damping):
     stepdir = conjugate_gradients(Fvp, -loss_grad, 10)
 
     # Step len
-    shs = 0.5 * (stepdir * Fvp(stepdir)).sum(0, keepdim=True)
-    lm = torch.sqrt(shs / max_kl) # lm for "lagrange multiplier"
+    sFs = 0.5 * (stepdir * Fvp(stepdir)).sum(0, keepdim=True)
+    lm = torch.sqrt(sFs / max_kl) # lm for "lagrange multiplier"
     fullstep = stepdir / lm[0]
     neggdotstepdir = (-loss_grad * stepdir).sum(0, keepdim=True)
 
