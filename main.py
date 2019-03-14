@@ -29,8 +29,7 @@ def main():
     policy_net = Policy(num_inputs, num_actions)
     value_net = Value(num_inputs)
 
-    n_update = 3
-    for i_update in range(n_update):
+    for i_update in range(args.nupdate):
         memory = Memory(); num_steps = 0; reward_batch = 0; num_episodes = 0
 
         while num_steps < args.batch_size:
@@ -67,8 +66,8 @@ def main():
 
         reward_batch /= num_episodes
         if (i_update==0) or (i_update % args.log_interval == 0) or (i_update==n_update-1):
-            print('===== update {} ====='.format(i_update))
-            print('Last episode return= {}\tAverage return= {:.2f}'.format(reward_sum, reward_batch))
+            print('update {} Last episode return= {:.5f}\tAverage return= {:.2f}'.format(
+                i_update, reward_sum, reward_batch))
 
 def select_action(policy_net, state):
     state = torch.from_numpy(state).unsqueeze(0)
@@ -145,6 +144,7 @@ def parse_arg():
     parser = argparse.ArgumentParser(description='PyTorch actor-critic example')
     parser.add_argument('--seed', type=int, default=12345, help='random seed')
     parser.add_argument('--env-name', default="Reacher-v2",help='name of the environment to run')
+    parser.add_argument('--nupdate', type=int, default=20, help='n update')
     parser.add_argument('--batch-size', type=int, default=2000, help='batch-size')
     parser.add_argument('--gamma', type=float, default=0.995, help='discount factor')
     parser.add_argument('--tau', type=float, default=0.97, help='gae')
