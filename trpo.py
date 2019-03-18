@@ -6,13 +6,24 @@ from utils import *
 def trpo_step(model, get_loss, get_kl, max_kl, damping):
     def Fvp(v):
         kl = get_kl().mean()
+        # print('kl', kl.data)
+
         grad_kl = torch.autograd.grad(kl, model.parameters(), create_graph=True)
         grad_kl = torch.cat([grad.view(-1) for grad in grad_kl])
+        # print('grad_kl.sum()', grad_kl.sum())
 
         grad_kl_v = (grad_kl * Variable(v)).sum()
+        # print('grad_kl_v.norm()', grad_kl_v.norm().data)
+
         grad_grad_kl_v = torch.autograd.grad(grad_kl_v, model.parameters())
         grad_grad_kl_v = torch.cat([grad.contiguous().view(-1) for grad in grad_grad_kl_v]).data
-        return grad_grad_kl_v + (v*damping)
+        # print('grad_grad_kl_v.norm()', grad_grad_kl_v.norm())
+
+        damped_grad_grad_kl_v = grad_grad_kl_v + (v*damping)
+        # print(damped_grad_grad_kl_v)
+
+        return damped_grad_grad_kl_v
+        # return grad_grad_kl_v
 
     # Compute loss and grad
     loss = get_loss()
