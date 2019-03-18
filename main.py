@@ -66,7 +66,7 @@ def main():
 
         reward_batch /= num_episodes
         if (i_update==0) or (i_update % args.log_interval == 0) or (i_update==n_update-1):
-            print('update {} Last episode return= {:.5f}\tAverage return= {:.2f}'.format(
+            print('update {} Last episode return= {:.5f}\tAverage return= {:.2f} ====='.format(
                 i_update, reward_sum, reward_batch))
 
 def select_action(policy_net, state):
@@ -133,8 +133,12 @@ def update_params(policy_net, value_net, batch, args):
         mean0 = Variable(mean1.data)
         log_std0 = Variable(log_std1.data)
         std0 = Variable(std1.data)
-        kl = log_std1 - log_std0 + (std0.pow(2) + (mean0 - mean1).pow(2)) / (2.0 * std1.pow(2)) - 0.5
+        kl = (log_std1 - log_std0) + (std0.pow(2) + (mean0 - mean1).pow(2))/(2.0*std1.pow(2)) - 0.5
         return kl.sum(1, keepdim=True)
+        # pi_new = torch.distributions.Normal(loc=mean1, scale=std1)
+        # pi_old = torch.distributions.Normal(loc=mean0, scale=std0)
+        # kl = torch.distributions.kl.kl_divergence(pi_old, pi_new)
+        # return kl.sum(dim=1, keepdim=True) # sum over action dimensions
 
     action_means, action_log_stds, action_stds = policy_net(Variable(states))
     fixed_log_prob = normal_log_density(Variable(actions), action_means, action_log_stds, action_stds).data.clone()
